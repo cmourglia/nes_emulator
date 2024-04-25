@@ -1,5 +1,6 @@
 #include "opcode.h"
 
+#include <stdlib.h>
 #include <unordered_map>
 
 // There is probably tons of better ways to handle that,
