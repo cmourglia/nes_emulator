@@ -145,12 +145,12 @@ OpCode opcode_get_next(u16 program_counter, u8* memory) {
         } break;
 
         case 2: {
-            code.lo_byte = memory[program_counter + 1];
+            code.byte = memory[program_counter + 1];
         } break;
 
         case 3: {
-            code.lo_byte = memory[program_counter + 1];
-            code.hi_byte = memory[program_counter + 2];
+            code.byte = memory[program_counter + 1];
+            code._ignored = memory[program_counter + 2];
         } break;
 
         default: {

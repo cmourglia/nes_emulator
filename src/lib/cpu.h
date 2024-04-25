@@ -19,6 +19,7 @@ struct CPU {
             u8 interrupt_disable : 1;
             u8 decimal_mode : 1;  // Disabled on NES
             u8 break_command : 1;
+            u8 unused : 1;
             u8 overflow_flag : 1;
             u8 negative_flag : 1;
         };
@@ -42,3 +43,9 @@ enum AddressingMode {
     AM_ZeroPage_X,
     AM_ZeroPage_Y,
 };
+
+CPU init_cpu();
+
+// TODO: This is temporary, to get started. In the future
+// we will need a proper loop, with a bus and so on
+void interpret_program(u8* code, u16 code_size);

@@ -6,12 +6,12 @@ struct OpCode {
     u8 code;
     u8 bytes;
     u8 cycles;
-    AddressingMode addressingMode;
+    AddressingMode addressing_mode;
 
     union {
         struct {
-            u8 lo_byte;
-            u8 hi_byte;
+            u8 byte;
+            u8 _ignored;
         };
         u16 word;
     };
