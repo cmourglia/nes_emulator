@@ -1,7 +1,5 @@
 #include "disassembler.h"
 
-#include <format>
-
 #include "opcode.h"
 
 std::string dec_to_hex(int d, int size) {
