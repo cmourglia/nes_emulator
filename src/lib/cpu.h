@@ -48,4 +48,4 @@ CPU init_cpu();
 
 // TODO: This is temporary, to get started. In the future
 // we will need a proper loop, with a bus and so on
-void interpret_program(u8* code, u16 code_size);
+void interpret_program(CPU* cpu, u8* code, u16 code_size);

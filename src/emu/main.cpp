@@ -105,7 +105,8 @@ int main() {
 
     auto disassembly = disassemble_code(test_code, sizeof(test_code));
 
-    interpret_program(test_code, sizeof(test_code));
+    CPU cpu = init_cpu();
+    interpret_program(&cpu, test_code, sizeof(test_code));
 
     int line = 0;
 

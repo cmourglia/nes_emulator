@@ -48,29 +48,27 @@ void update_cpu_status(CPU* cpu, u8 value, u8 status_flags) {
     }
 }
 
-void interpret_program(u8* code, u16 code_size) {
-    CPU cpu = init_cpu();
-
+void interpret_program(CPU* cpu, u8* code, u16 code_size) {
     bool quit = false;
 
     while (!quit) {
-        OpCode opcode = opcode_get_next(cpu.program_counter, code);
+        OpCode opcode = opcode_get_next(cpu->program_counter, code);
 
         switch (opcode.code) {
             case 0xA9: {
-                cpu.accumulator = opcode.byte;
-                update_cpu_status(&cpu, cpu.accumulator,
+                cpu->accumulator = opcode.byte;
+                update_cpu_status(cpu, cpu->accumulator,
                                   CS_ZeroFlag | CS_NegativeFlag);
             } break;
 
             case 0xAA: {
-                cpu.x = cpu.accumulator;
-                update_cpu_status(&cpu, cpu.x, CS_ZeroFlag | CS_NegativeFlag);
+                cpu->x = cpu->accumulator;
+                update_cpu_status(cpu, cpu->x, CS_ZeroFlag | CS_NegativeFlag);
             } break;
 
             case 0xE8: {
-                cpu.x += 1;
-                update_cpu_status(&cpu, cpu.x, CS_ZeroFlag | CS_NegativeFlag);
+                cpu->x += 1;
+                update_cpu_status(cpu, cpu->x, CS_ZeroFlag | CS_NegativeFlag);
             } break;
 
             case 0x00: {
@@ -82,12 +80,10 @@ void interpret_program(u8* code, u16 code_size) {
             } break;
         }
 
-        cpu.program_counter += opcode.bytes;
+        cpu->program_counter += opcode.bytes;
 
-        if (cpu.program_counter >= code_size) {
+        if (cpu->program_counter >= code_size) {
             break;
         }
     }
-
-    dump_cpu(&cpu);
 }
