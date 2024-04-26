@@ -1,4 +1,4 @@
-[![Workflows](https://github.com/cmourglia/nes_emulator/actions/workflows/cmake-multi-platform.yml/badge.svg)]
+[![Workflows](https://github.com/cmourglia/nes_emulator/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/cmourglia/nes_emulator/actions/workflows/cmake-multi-platform.yml)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/2c1a985e8f94430fb067aaf2aeebcc21)](https://app.codacy.com/gh/cmourglia/nes_emulator/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 
 Just another NES emulator, initially for learning purposes
