@@ -15,6 +15,8 @@ using u64 = uint64_t;
 using f32 = float;
 using f64 = double;
 
+#define UNUSED(x) (void)x;
+
 // https://www.gingerbill.org/article/2015/08/19/defer-in-cpp
 namespace DeferPriv {
 template <typename Fn>
