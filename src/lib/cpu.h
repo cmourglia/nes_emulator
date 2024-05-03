@@ -2,6 +2,8 @@
 
 #include "common.h"
 
+#include <vector>
+
 // https://www.nesdev.org/obelisk-6502-guide/
 struct CPU {
     u16 program_counter;
@@ -25,7 +27,7 @@ struct CPU {
         };
     };
 
-    u8 memory[4096];
+    u8 memory[0xFFFF];
 };
 
 enum AddressingMode {
@@ -44,8 +46,11 @@ enum AddressingMode {
     AM_ZeroPage_Y,
 };
 
-CPU init_cpu();
+CPU init_cpu(const std::vector<u8>& code = {});
+
+void reset_cpu(CPU* cpu);
+void load_program(CPU* cpu, const std::vector<u8>& code);
 
 // TODO: This is temporary, to get started. In the future
 // we will need a proper loop, with a bus and so on
-void interpret_program(CPU* cpu, u8* code, u16 code_size);
+void run_cpu(CPU* cpu);

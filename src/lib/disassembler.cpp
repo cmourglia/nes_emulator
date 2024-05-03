@@ -29,15 +29,15 @@ std::string dec_to_hex(int d, int size) {
     return result;
 }
 
-std::vector<std::string> disassemble_code(u8* code, u16 code_size) {
+std::vector<std::string> disassemble_code(const std::vector<u8> code) {
     std::vector<std::string> result;
 
     u16 pointer = 0;
 
     std::string str;
 
-    while (pointer < code_size) {
-        OpCode opcode = opcode_get_next(pointer, code);
+    while (pointer < code.size()) {
+        OpCode opcode = get_next_opcode(pointer, code.data());
 
         str.clear();
 
@@ -53,7 +53,7 @@ std::vector<std::string> disassemble_code(u8* code, u16 code_size) {
 
         str += "   ";
 
-        str += opcode_get_mnemonic(opcode.code);
+        str += get_instruction_mnemonic(opcode.instruction);
         str += " ";
 
         switch (opcode.addressing_mode) {
@@ -108,7 +108,7 @@ std::vector<std::string> disassemble_code(u8* code, u16 code_size) {
     return result;
 }
 
-void dump_cpu(CPU* cpu) {
+void dump_cpu(CPU *cpu) {
     printf(" -=-=-=- CPU Registers -=-=-=-\n");
 
     printf("  Program Counter: %04x\n", cpu->program_counter);

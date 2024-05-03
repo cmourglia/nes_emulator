@@ -103,10 +103,12 @@ int main() {
 
     bool done = false;
 
-    auto disassembly = disassemble_code(test_code, sizeof(test_code));
+    size_t code_size = sizeof(test_code);
 
-    CPU cpu = init_cpu();
-    interpret_program(&cpu, test_code, sizeof(test_code));
+    auto disassembly = disassemble_code({test_code, test_code + code_size});
+
+    CPU cpu = init_cpu({test_code, test_code + code_size});
+    run_cpu(&cpu);
 
     int line = 0;
 
