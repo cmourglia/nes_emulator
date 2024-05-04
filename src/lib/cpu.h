@@ -27,7 +27,7 @@ struct CPU {
         };
     };
 
-    u8 memory[0xFFFF];
+    u8 memory[0x10000];
 };
 
 enum StatusFlags : u8 {
