@@ -97,8 +97,6 @@ int main() {
     defer(ImGui_ImplSDL3_Shutdown());
     defer(ImGui_ImplSDLRenderer3_Shutdown());
 
-    bool show_demo_window = true;
-    bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.0f);
 
     bool done = false;
@@ -144,17 +142,8 @@ int main() {
 
         ImGui::DockSpace(ImGui::GetID("DockSpace"));
 
-        ImGui::Begin("Hello, World");
+        ImGui::Begin("NES Debug View");
         {
-            static float f = 0.0f;
-            static int counter = 0;
-
-            ImGui::Text("This is some useful text");
-            ImGui::Checkbox("Demo Window", &show_demo_window);
-            ImGui::Checkbox("Another window", &show_another_window);
-
-            ImGui::ColorEdit3("Clear color", (float *)&clear_color);
-
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
                         1000.0f / io.Framerate, io.Framerate);
 
@@ -186,7 +175,7 @@ int main() {
         SDL_RenderClear(renderer);
         ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData());
 
-        SDL_FRect r = {.x = 500, .y = 200, .w = 200, .h = 200};
+        // SDL_FRect r = {.x = 500, .y = 200, .w = 200, .h = 200};
         // SDL_RenderFillRect(renderer, nullptr);
 
         SDL_RenderPresent(renderer);
