@@ -11,6 +11,12 @@ enum Consts {
     STACK_START = 0x0100,
 };
 
+void tick(CPU *cpu, int cycles) {
+    // TODO: Move this in the BUS probably
+    // TODO: Implement me please
+    fprintf(stderr, "TODO: tick()\n");
+}
+
 static void set_flag(CPU *cpu, StatusFlags flag, bool v) {
     if (v) {
         cpu->status |= flag;
@@ -207,9 +213,11 @@ void run_cpu(CPU *cpu) {
 
         cycles += get_operand_address(cpu, &opcode, &operand_address);
 
-        opcode.instruction_fn(cpu, &opcode, operand_address);
+        opcode.instruction_fn(cpu, operand_address);
 
         cpu->program_counter += opcode.bytes;
+
+        tick(cpu, cycles);
 
         if (cpu->break_command) {
             // TODO: Handle that more properly
@@ -219,9 +227,8 @@ void run_cpu(CPU *cpu) {
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#ADC
-void adc_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void adc_fn(CPU *cpu, u16 operand_address) {
     UNUSED(cpu);
-    UNUSED(opcode);
     UNUSED(operand_address);
 
     // TODO
@@ -231,9 +238,7 @@ void adc_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#AND
 // Logical AND
 // A,Z,N = A&M
-void and_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
-    UNUSED(opcode);
-
+void and_fn(CPU *cpu, u16 operand_address) {
     cpu->accumulator = cpu->accumulator & read_mem(cpu, operand_address);
     update_zero_and_negative_flags(cpu, cpu->accumulator);
 }
@@ -241,9 +246,7 @@ void and_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#ASL
 // Arithmetic Shift Left
 // M,Z,C,N = M*2
-void asl_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
-    UNUSED(opcode);
-
+void asl_fn(CPU *cpu, u16 operand_address) {
     u8 value = read_mem(cpu, operand_address);
     set_flag(cpu, CarryFlag, value & 0x80);
     value <<= 1;
@@ -254,20 +257,19 @@ void asl_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#ASL
 // Arithmetic Shift Left
 // A,Z,C,N = M*2
-void asl_acc_fn(CPU *cpu, OpCode *opcode, u16) {
+void asl_acc_fn(CPU *cpu, u16) {
     set_flag(cpu, CarryFlag, cpu->accumulator & 0x80);
     cpu->accumulator <<= 1;
     update_zero_and_negative_flags(cpu, cpu->accumulator);
 }
 
-// TODO: Write the cycles on the CPU instead of on the opcode
-void branch(CPU *cpu, OpCode *opcode, u16 relative_address) {
-    opcode->cycles += 1;
+void branch(CPU *cpu, u16 relative_address) {
+    tick(cpu, 1);
 
     u16 new_pc = cpu->program_counter + 1 + relative_address;
 
     if (((cpu->program_counter + 1) & 0xFF00) != (new_pc & 0xFF00)) {
-        opcode->cycles += 1;
+        tick(cpu, 1);
     }
 
     cpu->program_counter = new_pc;
@@ -275,34 +277,32 @@ void branch(CPU *cpu, OpCode *opcode, u16 relative_address) {
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#BCC
 // Branch if Carry Clear
-void bcc_fn(CPU *cpu, OpCode *opcode, u16 relative_address) {
+void bcc_fn(CPU *cpu, u16 relative_address) {
     if (!cpu->carry_flag) {
-        branch(cpu, opcode, relative_address);
+        branch(cpu, relative_address);
     }
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#BCS
 // Branch if Carry Set
-void bcs_fn(CPU *cpu, OpCode *opcode, u16 relative_address) {
+void bcs_fn(CPU *cpu, u16 relative_address) {
     if (cpu->carry_flag) {
-        branch(cpu, opcode, relative_address);
+        branch(cpu, relative_address);
     }
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#BEQ
 // Branch if Equal
-void beq_fn(CPU *cpu, OpCode *opcode, u16 relative_address) {
+void beq_fn(CPU *cpu, u16 relative_address) {
     if (cpu->zero_flag) {
-        branch(cpu, opcode, relative_address);
+        branch(cpu, relative_address);
     }
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#BIT
 // Bit Test
 // A & M, N = M7, V = M6
-void bit_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
-    UNUSED(opcode);
-
+void bit_fn(CPU *cpu, u16 operand_address) {
     u8 memory = read_mem(cpu, operand_address);
 
     set_flag(cpu, ZeroFlag, (cpu->accumulator & memory) == 0);
@@ -312,33 +312,31 @@ void bit_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#BMI
 // Branch if Minus
-void bmi_fn(CPU *cpu, OpCode *opcode, u16 relative_address) {
+void bmi_fn(CPU *cpu, u16 relative_address) {
     if (cpu->negative_flag) {
-        branch(cpu, opcode, relative_address);
+        branch(cpu, relative_address);
     }
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#BNE
 // Branch if Not Equal
-void bne_fn(CPU *cpu, OpCode *opcode, u16 relative_address) {
+void bne_fn(CPU *cpu, u16 relative_address) {
     if (!cpu->zero_flag) {
-        branch(cpu, opcode, relative_address);
+        branch(cpu, relative_address);
     }
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#BPL
 // Branch if Positive
-void bpl_fn(CPU *cpu, OpCode *opcode, u16 relative_address) {
+void bpl_fn(CPU *cpu, u16 relative_address) {
     if (!cpu->negative_flag) {
-        branch(cpu, opcode, relative_address);
+        branch(cpu, relative_address);
     }
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#BRK
 // Force Interrupt
-void brk_fn(CPU *cpu, OpCode *opcode, u16) {
-    UNUSED(opcode);
-
+void brk_fn(CPU *cpu, u16) {
     push_stack_u16(cpu, cpu->program_counter + 1);
 
     set_flag(cpu, BreakCommand, true);
@@ -350,48 +348,44 @@ void brk_fn(CPU *cpu, OpCode *opcode, u16) {
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#BVC
 // Branch if Overflow Clear
-void bvc_fn(CPU *cpu, OpCode *opcode, u16 relative_address) {
+void bvc_fn(CPU *cpu, u16 relative_address) {
     if (!cpu->overflow_flag) {
-        branch(cpu, opcode, relative_address);
+        branch(cpu, relative_address);
     }
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#BVS
 // Branch if Overflow Set
-void bvs_fn(CPU *cpu, OpCode *opcode, u16 relative_address) {
+void bvs_fn(CPU *cpu, u16 relative_address) {
     if (cpu->overflow_flag) {
-        branch(cpu, opcode, relative_address);
+        branch(cpu, relative_address);
     }
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#CLC
 // Clear Carry Flag
-void clc_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
-    UNUSED(opcode);
+void clc_fn(CPU *cpu, u16 operand_address) {
     UNUSED(operand_address);
     set_flag(cpu, CarryFlag, false);
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#CLD
 // Clear Decimal Mode
-void cld_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
-    UNUSED(opcode);
+void cld_fn(CPU *cpu, u16 operand_address) {
     UNUSED(operand_address);
     set_flag(cpu, DecimalModeFlag, false);
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#CLI
 // Clear Interrupt Disable
-void cli_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
-    UNUSED(opcode);
+void cli_fn(CPU *cpu, u16 operand_address) {
     UNUSED(operand_address);
     set_flag(cpu, InterruptDisable, false);
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#CLV
 // Clear Overflow Flag
-void clv_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
-    UNUSED(opcode);
+void clv_fn(CPU *cpu, u16 operand_address) {
     UNUSED(operand_address);
     set_flag(cpu, OverflowFlag, false);
 }
@@ -399,7 +393,7 @@ void clv_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#CMP
 // Compare
 // Z,C,N = A-M
-void cmp_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void cmp_fn(CPU *cpu, u16 operand_address) {
     u8 memory = read_mem(cpu, operand_address);
 
     set_flag(cpu, CarryFlag, cpu->accumulator >= memory);
@@ -409,7 +403,7 @@ void cmp_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#CPX
 // Compare X Register
 // Z,C,N = X-M
-void cpx_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void cpx_fn(CPU *cpu, u16 operand_address) {
     u8 memory = read_mem(cpu, operand_address);
 
     set_flag(cpu, CarryFlag, cpu->x >= memory);
@@ -419,7 +413,7 @@ void cpx_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#CPY
 // Compare Y Register
 // Z,C,N = Y-M
-void cpy_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void cpy_fn(CPU *cpu, u16 operand_address) {
     u8 memory = read_mem(cpu, operand_address);
 
     set_flag(cpu, CarryFlag, cpu->y >= memory);
@@ -429,7 +423,7 @@ void cpy_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#DEC
 // Decrement memory
 // M,Z,N = M-1
-void dec_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void dec_fn(CPU *cpu, u16 operand_address) {
     u8 memory = read_mem(cpu, operand_address);
     u8 result = memory - 1;
 
@@ -440,7 +434,7 @@ void dec_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#DEX
 // Decrement X Register
 // X,Z,N = X-1
-void dex_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void dex_fn(CPU *cpu, u16 operand_address) {
     cpu->x -= 1;
     update_zero_and_negative_flags(cpu, cpu->x);
 }
@@ -448,7 +442,7 @@ void dex_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#DEY
 // Decrement Y Register
 // Y,Z,N = Y-1
-void dey_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void dey_fn(CPU *cpu, u16 operand_address) {
     cpu->y -= 1;
     update_zero_and_negative_flags(cpu, cpu->y);
 }
@@ -456,7 +450,7 @@ void dey_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#EOR
 // Exclusive OR
 // A,Z,N = A^M
-void eor_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void eor_fn(CPU *cpu, u16 operand_address) {
     u8 memory = read_mem(cpu, operand_address);
     cpu->accumulator ^= memory;
     update_zero_and_negative_flags(cpu, cpu->accumulator);
@@ -465,7 +459,7 @@ void eor_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#INC
 // Increment memory
 // M,Z,N = M + 1
-void inc_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void inc_fn(CPU *cpu, u16 operand_address) {
     u8 result = read_mem(cpu, operand_address) - 1;
     write_mem(cpu, operand_address, result);
     update_zero_and_negative_flags(cpu, result);
@@ -474,7 +468,7 @@ void inc_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#INX
 // Increment X Register
 // X,Z,N = X+1
-void inx_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void inx_fn(CPU *cpu, u16 operand_address) {
     cpu->x += 1;
     update_zero_and_negative_flags(cpu, cpu->x);
 }
@@ -482,20 +476,20 @@ void inx_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#INY
 // Increment Y Register
 // Y,Z,N = Y+1
-void iny_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void iny_fn(CPU *cpu, u16 operand_address) {
     cpu->y += 1;
     update_zero_and_negative_flags(cpu, cpu->y);
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#JMP
 // Jump
-void jmp_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void jmp_fn(CPU *cpu, u16 operand_address) {
     cpu->program_counter = operand_address;
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#JSR
 // Jump to Subroutine
-void jsr_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void jsr_fn(CPU *cpu, u16 operand_address) {
     // TODO: Check pushed PC
     push_stack_u16(cpu, cpu->program_counter + 3 - 1);
     cpu->program_counter = operand_address;
@@ -504,7 +498,7 @@ void jsr_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#LDA
 // Load Accumulator
 // A,Z,N = M
-void lda_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void lda_fn(CPU *cpu, u16 operand_address) {
     cpu->accumulator = read_mem(cpu, operand_address);
     update_zero_and_negative_flags(cpu, cpu->accumulator);
 }
@@ -512,7 +506,7 @@ void lda_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#LDX
 // Load X Register
 // X,Z,N = M
-void ldx_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void ldx_fn(CPU *cpu, u16 operand_address) {
     cpu->x = read_mem(cpu, operand_address);
     update_zero_and_negative_flags(cpu, cpu->x);
 }
@@ -520,7 +514,7 @@ void ldx_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#LDY
 // Load Y Register
 // Y,Z,N = M
-void ldy_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void ldy_fn(CPU *cpu, u16 operand_address) {
     cpu->y = read_mem(cpu, operand_address);
     update_zero_and_negative_flags(cpu, cpu->y);
 }
@@ -528,7 +522,7 @@ void ldy_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#LSR
 // Logical Shift Right
 // M,C,Z,N = M/2
-void lsr_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void lsr_fn(CPU *cpu, u16 operand_address) {
     u8 value = read_mem(cpu, operand_address);
     set_flag(cpu, CarryFlag, value & 0x01);
     value >>= 1;
@@ -539,7 +533,7 @@ void lsr_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#LSR
 // Logical Shift Right
 // A,C,Z,N = A/2
-void lsr_acc_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void lsr_acc_fn(CPU *cpu, u16 operand_address) {
     set_flag(cpu, CarryFlag, cpu->accumulator & 0x80);
     cpu->accumulator >>= 1;
     update_zero_and_negative_flags(cpu, cpu->accumulator);
@@ -547,7 +541,7 @@ void lsr_acc_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#NOP
 // No Operation
-void nop_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void nop_fn(CPU *cpu, u16 operand_address) {
     UNUSED(cpu);
     UNUSED(operand_address);
 }
@@ -555,14 +549,14 @@ void nop_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#ORA
 // Logical Inclusive OR
 // A,Z,N = A|M
-void ora_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void ora_fn(CPU *cpu, u16 operand_address) {
     cpu->accumulator |= read_mem(cpu, operand_address);
     update_zero_and_negative_flags(cpu, cpu->accumulator);
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#PHA
 // Push Accumulator
-void pha_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void pha_fn(CPU *cpu, u16 operand_address) {
     UNUSED(operand_address);
 
     push_stack(cpu, cpu->accumulator);
@@ -570,7 +564,7 @@ void pha_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#PHP
 // Push Processor Status
-void php_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void php_fn(CPU *cpu, u16 operand_address) {
     UNUSED(operand_address);
 
     push_stack(cpu, cpu->status);
@@ -578,7 +572,7 @@ void php_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#PLA
 // Pull Accumulator
-void pla_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void pla_fn(CPU *cpu, u16 operand_address) {
     UNUSED(operand_address);
 
     cpu->accumulator = pop_stack(cpu);
@@ -587,7 +581,7 @@ void pla_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#PLP
 // Pull Processor Status
-void plp_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void plp_fn(CPU *cpu, u16 operand_address) {
     UNUSED(operand_address);
 
     cpu->status = pop_stack(cpu);
@@ -595,7 +589,7 @@ void plp_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#ROL
 // Rotate Left
-void rol_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void rol_fn(CPU *cpu, u16 operand_address) {
     u8 value = read_mem(cpu, operand_address);
 
     bool carry = value & 0x80;
@@ -608,7 +602,7 @@ void rol_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#ROL
 // Rotate Left
-void rol_acc_fn(CPU *cpu, OpCode *opcode, u16) {
+void rol_acc_fn(CPU *cpu, u16) {
     bool carry = cpu->accumulator & 0x80;
     cpu->accumulator = (cpu->accumulator << 1) | cpu->carry_flag;
 
@@ -618,7 +612,7 @@ void rol_acc_fn(CPU *cpu, OpCode *opcode, u16) {
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#ROR
 // Rotate Right
-void ror_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void ror_fn(CPU *cpu, u16 operand_address) {
     u8 value = read_mem(cpu, operand_address);
 
     bool carry = value & 0x01;
@@ -630,7 +624,7 @@ void ror_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#ROR
-void ror_acc_fn(CPU *cpu, OpCode *opcode, u16) {
+void ror_acc_fn(CPU *cpu, u16) {
     bool carry = cpu->accumulator & 0x01;
     cpu->accumulator = (cpu->accumulator >> 1) | (cpu->carry_flag << 7);
 
@@ -640,68 +634,68 @@ void ror_acc_fn(CPU *cpu, OpCode *opcode, u16) {
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#RTI
 // Return From Interrupt
-void rti_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void rti_fn(CPU *cpu, u16 operand_address) {
     cpu->status = pop_stack(cpu);
     cpu->program_counter = pop_stack_u16(cpu);
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#RTS
 // Return From Subroutine
-void rts_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void rts_fn(CPU *cpu, u16 operand_address) {
     cpu->program_counter = pop_stack_u16(cpu);
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#SBC
 // Subtract with Carry
 // A,Z,C,N = A-M-(1-C)
-void sbc_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void sbc_fn(CPU *cpu, u16 operand_address) {
     // TODO:
     abort();
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#SEC
 // Set Carry Flag
-void sec_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void sec_fn(CPU *cpu, u16 operand_address) {
     set_flag(cpu, CarryFlag, true);
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#SED
 // Set Decimal Flag
-void sed_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void sed_fn(CPU *cpu, u16 operand_address) {
     set_flag(cpu, DecimalModeFlag, true);
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#SEI
 // Set Interrupt Disable Flag
-void sei_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void sei_fn(CPU *cpu, u16 operand_address) {
     set_flag(cpu, InterruptDisable, true);
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#STA
 // Store Accumulator
 // M = A
-void sta_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void sta_fn(CPU *cpu, u16 operand_address) {
     write_mem(cpu, operand_address, cpu->accumulator);
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#STX
 // Store X Register
 // M = X
-void stx_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void stx_fn(CPU *cpu, u16 operand_address) {
     write_mem(cpu, operand_address, cpu->x);
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#STY
 // Store Y Register
 // M = Y
-void sty_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void sty_fn(CPU *cpu, u16 operand_address) {
     write_mem(cpu, operand_address, cpu->y);
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#TAX
 // Transfer Accumulator to X
 // X = A
-void tax_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void tax_fn(CPU *cpu, u16 operand_address) {
     cpu->x = cpu->accumulator;
     update_zero_and_negative_flags(cpu, cpu->x);
 }
@@ -709,7 +703,7 @@ void tax_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#TAY
 // Transfer Accumulator to Y
 // Y = A
-void tay_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void tay_fn(CPU *cpu, u16 operand_address) {
     cpu->y = cpu->accumulator;
     update_zero_and_negative_flags(cpu, cpu->y);
 }
@@ -717,7 +711,7 @@ void tay_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#TSX
 // Transfer Stack Pointer to X
 // X = S
-void tsx_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void tsx_fn(CPU *cpu, u16 operand_address) {
     cpu->x = cpu->stack_pointer;
     update_zero_and_negative_flags(cpu, cpu->x);
 }
@@ -725,7 +719,7 @@ void tsx_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#TXA
 // Transfer X to Accumulator
 // A = X
-void txa_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void txa_fn(CPU *cpu, u16 operand_address) {
     cpu->accumulator = cpu->x;
     update_zero_and_negative_flags(cpu, cpu->accumulator);
 }
@@ -733,14 +727,14 @@ void txa_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#TXS
 // Transfer X to Stack Pointer
 // S = X
-void txs_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void txs_fn(CPU *cpu, u16 operand_address) {
     cpu->stack_pointer = cpu->x;
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#TYA
 // Transfer Y to Accumulator
 // A = Y
-void tya_fn(CPU *cpu, OpCode *opcode, u16 operand_address) {
+void tya_fn(CPU *cpu, u16 operand_address) {
     cpu->accumulator = cpu->y;
     update_zero_and_negative_flags(cpu, cpu->accumulator);
 }

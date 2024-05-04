@@ -62,7 +62,7 @@ enum Instruction {
 };
 
 struct OpCode {
-    void (*instruction_fn)(CPU *, OpCode *, u16);
+    void (*instruction_fn)(CPU *, u16);
 
     Instruction instruction;
     u8 bytes;
