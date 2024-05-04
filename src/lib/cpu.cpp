@@ -89,7 +89,7 @@ void reset_cpu(CPU *cpu) {
     cpu->accumulator = 0;
     cpu->x = 0;
     cpu->y = 0;
-    cpu->status = 0 | UnusedFlag;
+    cpu->status = UnusedFlag;
     // TODO: Find out why everyone puts sets that as 0xFD
     cpu->stack_pointer = 0xFD;
 
@@ -182,6 +182,7 @@ int get_operand_address(CPU *cpu, OpCode *opcode, u16 *out_address) {
             }
 
             *out_address = relative_address;
+            return 0;
         }
 
         case AM_ZeroPage: {
