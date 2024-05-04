@@ -30,6 +30,17 @@ struct CPU {
     u8 memory[0xFFFF];
 };
 
+enum StatusFlags : u8 {
+    CarryFlag = 1 << 0,         // Carry
+    ZeroFlag = 1 << 1,          // Zero
+    InterruptDisable = 1 << 2,  // Disable interrupts
+    DecimalModeFlag = 1 << 3,   // Decimal mode (unused on the NES)
+    BreakCommand = 1 << 4,      // Break
+    UnusedFlag = 1 << 5,        // Unused
+    OverflowFlag = 1 << 6,      // Overflow
+    NegativeFlag = 1 << 7,      // Negative
+};
+
 enum AddressingMode {
     AM_Accumulator,
     AM_Absolute,

@@ -8,7 +8,7 @@ TEST_CASE("a9_lda_immediate_load_data", "[opcodes][lda]") {
     run_cpu(&cpu);
 
     REQUIRE(cpu.accumulator == 0x05);
-    REQUIRE(cpu.status == 0);
+    REQUIRE(cpu.status == (BreakCommand | UnusedFlag));
 }
 
 TEST_CASE("a9_lda_zero_flag", "[opcodes][lda]") {
@@ -16,7 +16,7 @@ TEST_CASE("a9_lda_zero_flag", "[opcodes][lda]") {
     run_cpu(&cpu);
 
     REQUIRE(cpu.accumulator == 0x00);
-    REQUIRE(cpu.status == 0b00000010);
+    REQUIRE(cpu.status == (BreakCommand | UnusedFlag | ZeroFlag));
 }
 
 TEST_CASE("a9_lda_negative_flag", "[opcodes][lda]") {
@@ -24,7 +24,7 @@ TEST_CASE("a9_lda_negative_flag", "[opcodes][lda]") {
     run_cpu(&cpu);
 
     REQUIRE(cpu.accumulator == 0xFF);
-    REQUIRE(cpu.status == 0b10000000);
+    REQUIRE(cpu.status == (BreakCommand | UnusedFlag | NegativeFlag));
 }
 
 TEST_CASE("aa_tax_move_a_to_x", "[opcodes][tax]") {
@@ -34,7 +34,7 @@ TEST_CASE("aa_tax_move_a_to_x", "[opcodes][tax]") {
 
     REQUIRE(cpu.accumulator == 42);
     REQUIRE(cpu.x == 42);
-    REQUIRE(cpu.status == 0b00000000);
+    REQUIRE(cpu.status == (BreakCommand | UnusedFlag));
 }
 
 TEST_CASE("aa_tax_zero_flag", "[opcodes][tax]") {
@@ -43,7 +43,7 @@ TEST_CASE("aa_tax_zero_flag", "[opcodes][tax]") {
     run_cpu(&cpu);
 
     REQUIRE(cpu.x == 0);
-    REQUIRE(cpu.status == 0b00000010);
+    REQUIRE(cpu.status == (BreakCommand | UnusedFlag | ZeroFlag));
 }
 
 TEST_CASE("aa_tax_negative_flag", "[opcodes][tax]") {
@@ -52,7 +52,7 @@ TEST_CASE("aa_tax_negative_flag", "[opcodes][tax]") {
     run_cpu(&cpu);
 
     REQUIRE(cpu.x == 0xff);
-    REQUIRE(cpu.status == 0b10000000);
+    REQUIRE(cpu.status == (BreakCommand | UnusedFlag | NegativeFlag));
 }
 
 TEST_CASE("e8_inx_increment_x", "[opcodes][inx]") {
@@ -79,5 +79,5 @@ TEST_CASE("simple_program_1", "[programs]") {
     REQUIRE(cpu.accumulator == 0xc0);
     REQUIRE(cpu.x == 0xc1);
     REQUIRE(cpu.y == 0);
-    REQUIRE(cpu.status == 0b10000000);
+    REQUIRE(cpu.status == (BreakCommand | UnusedFlag | NegativeFlag));
 }
