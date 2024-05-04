@@ -1,10 +1,10 @@
 #include "cpu.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "common.h"
-#include "disassembler.h"
 #include "opcode.h"
 
 enum Consts {
@@ -12,6 +12,9 @@ enum Consts {
 };
 
 void tick(CPU *cpu, int cycles) {
+    UNUSED(cpu);
+    UNUSED(cycles);
+
     // TODO: Move this in the BUS probably
     // TODO: Implement me please
     fprintf(stderr, "TODO: tick()\n");
@@ -257,7 +260,7 @@ void asl_fn(CPU *cpu, u16 operand_address) {
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#ASL
 // Arithmetic Shift Left
 // A,Z,C,N = M*2
-void asl_acc_fn(CPU *cpu, u16) {
+void asl_acc_fn(CPU *cpu, u16 /* Address Mode Accumulator */) {
     set_flag(cpu, CarryFlag, cpu->accumulator & 0x80);
     cpu->accumulator <<= 1;
     update_zero_and_negative_flags(cpu, cpu->accumulator);
@@ -336,7 +339,7 @@ void bpl_fn(CPU *cpu, u16 relative_address) {
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#BRK
 // Force Interrupt
-void brk_fn(CPU *cpu, u16) {
+void brk_fn(CPU *cpu, u16 /* Address Mode Implied */) {
     push_stack_u16(cpu, cpu->program_counter + 1);
 
     set_flag(cpu, BreakCommand, true);
@@ -434,7 +437,7 @@ void dec_fn(CPU *cpu, u16 operand_address) {
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#DEX
 // Decrement X Register
 // X,Z,N = X-1
-void dex_fn(CPU *cpu, u16 operand_address) {
+void dex_fn(CPU *cpu, u16 /* Address Mode Implied */) {
     cpu->x -= 1;
     update_zero_and_negative_flags(cpu, cpu->x);
 }
@@ -442,7 +445,7 @@ void dex_fn(CPU *cpu, u16 operand_address) {
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#DEY
 // Decrement Y Register
 // Y,Z,N = Y-1
-void dey_fn(CPU *cpu, u16 operand_address) {
+void dey_fn(CPU *cpu, u16 /* Address Mode Implied */) {
     cpu->y -= 1;
     update_zero_and_negative_flags(cpu, cpu->y);
 }
@@ -468,7 +471,7 @@ void inc_fn(CPU *cpu, u16 operand_address) {
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#INX
 // Increment X Register
 // X,Z,N = X+1
-void inx_fn(CPU *cpu, u16 operand_address) {
+void inx_fn(CPU *cpu, u16 /* Address Mode Implied */) {
     cpu->x += 1;
     update_zero_and_negative_flags(cpu, cpu->x);
 }
@@ -476,7 +479,7 @@ void inx_fn(CPU *cpu, u16 operand_address) {
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#INY
 // Increment Y Register
 // Y,Z,N = Y+1
-void iny_fn(CPU *cpu, u16 operand_address) {
+void iny_fn(CPU *cpu, u16 /* Address Mode Implied */) {
     cpu->y += 1;
     update_zero_and_negative_flags(cpu, cpu->y);
 }
@@ -533,7 +536,7 @@ void lsr_fn(CPU *cpu, u16 operand_address) {
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#LSR
 // Logical Shift Right
 // A,C,Z,N = A/2
-void lsr_acc_fn(CPU *cpu, u16 operand_address) {
+void lsr_acc_fn(CPU *cpu, u16 /* Address Mode Accumulator */) {
     set_flag(cpu, CarryFlag, cpu->accumulator & 0x80);
     cpu->accumulator >>= 1;
     update_zero_and_negative_flags(cpu, cpu->accumulator);
@@ -556,34 +559,26 @@ void ora_fn(CPU *cpu, u16 operand_address) {
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#PHA
 // Push Accumulator
-void pha_fn(CPU *cpu, u16 operand_address) {
-    UNUSED(operand_address);
-
+void pha_fn(CPU *cpu, u16 /* Address Mode Implied */) {
     push_stack(cpu, cpu->accumulator);
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#PHP
 // Push Processor Status
-void php_fn(CPU *cpu, u16 operand_address) {
-    UNUSED(operand_address);
-
+void php_fn(CPU *cpu, u16 /* Address Mode Implied */) {
     push_stack(cpu, cpu->status);
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#PLA
 // Pull Accumulator
-void pla_fn(CPU *cpu, u16 operand_address) {
-    UNUSED(operand_address);
-
+void pla_fn(CPU *cpu, u16 /* Address Mode Implied */) {
     cpu->accumulator = pop_stack(cpu);
     update_zero_and_negative_flags(cpu, cpu->accumulator);
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#PLP
 // Pull Processor Status
-void plp_fn(CPU *cpu, u16 operand_address) {
-    UNUSED(operand_address);
-
+void plp_fn(CPU *cpu, u16 /* Address Mode Implied */) {
     cpu->status = pop_stack(cpu);
 }
 
@@ -602,7 +597,7 @@ void rol_fn(CPU *cpu, u16 operand_address) {
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#ROL
 // Rotate Left
-void rol_acc_fn(CPU *cpu, u16) {
+void rol_acc_fn(CPU *cpu, u16 /* Address Mode Implied */) {
     bool carry = cpu->accumulator & 0x80;
     cpu->accumulator = (cpu->accumulator << 1) | cpu->carry_flag;
 
@@ -624,7 +619,7 @@ void ror_fn(CPU *cpu, u16 operand_address) {
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#ROR
-void ror_acc_fn(CPU *cpu, u16) {
+void ror_acc_fn(CPU *cpu, u16 /* Address Mode Accumulator */) {
     bool carry = cpu->accumulator & 0x01;
     cpu->accumulator = (cpu->accumulator >> 1) | (cpu->carry_flag << 7);
 
@@ -634,14 +629,14 @@ void ror_acc_fn(CPU *cpu, u16) {
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#RTI
 // Return From Interrupt
-void rti_fn(CPU *cpu, u16 operand_address) {
+void rti_fn(CPU *cpu, u16 /* Address Mode Implied */) {
     cpu->status = pop_stack(cpu);
     cpu->program_counter = pop_stack_u16(cpu);
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#RTS
 // Return From Subroutine
-void rts_fn(CPU *cpu, u16 operand_address) {
+void rts_fn(CPU *cpu, u16 /* Address Mode Implied */) {
     cpu->program_counter = pop_stack_u16(cpu);
 }
 
@@ -649,25 +644,27 @@ void rts_fn(CPU *cpu, u16 operand_address) {
 // Subtract with Carry
 // A,Z,C,N = A-M-(1-C)
 void sbc_fn(CPU *cpu, u16 operand_address) {
+    UNUSED(cpu);
+    UNUSED(operand_address);
     // TODO:
     abort();
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#SEC
 // Set Carry Flag
-void sec_fn(CPU *cpu, u16 operand_address) {
+void sec_fn(CPU *cpu, u16 /* Address Mode Implied */) {
     set_flag(cpu, CarryFlag, true);
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#SED
 // Set Decimal Flag
-void sed_fn(CPU *cpu, u16 operand_address) {
+void sed_fn(CPU *cpu, u16 /* Address Mode Implied */) {
     set_flag(cpu, DecimalModeFlag, true);
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#SEI
 // Set Interrupt Disable Flag
-void sei_fn(CPU *cpu, u16 operand_address) {
+void sei_fn(CPU *cpu, u16 /* Address Mode Implied */) {
     set_flag(cpu, InterruptDisable, true);
 }
 
@@ -695,7 +692,7 @@ void sty_fn(CPU *cpu, u16 operand_address) {
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#TAX
 // Transfer Accumulator to X
 // X = A
-void tax_fn(CPU *cpu, u16 operand_address) {
+void tax_fn(CPU *cpu, u16 /* Address Mode Implied */) {
     cpu->x = cpu->accumulator;
     update_zero_and_negative_flags(cpu, cpu->x);
 }
@@ -703,7 +700,7 @@ void tax_fn(CPU *cpu, u16 operand_address) {
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#TAY
 // Transfer Accumulator to Y
 // Y = A
-void tay_fn(CPU *cpu, u16 operand_address) {
+void tay_fn(CPU *cpu, u16 /* Address Mode Implied */) {
     cpu->y = cpu->accumulator;
     update_zero_and_negative_flags(cpu, cpu->y);
 }
@@ -711,7 +708,7 @@ void tay_fn(CPU *cpu, u16 operand_address) {
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#TSX
 // Transfer Stack Pointer to X
 // X = S
-void tsx_fn(CPU *cpu, u16 operand_address) {
+void tsx_fn(CPU *cpu, u16 /* Address Mode Implied */) {
     cpu->x = cpu->stack_pointer;
     update_zero_and_negative_flags(cpu, cpu->x);
 }
@@ -719,7 +716,7 @@ void tsx_fn(CPU *cpu, u16 operand_address) {
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#TXA
 // Transfer X to Accumulator
 // A = X
-void txa_fn(CPU *cpu, u16 operand_address) {
+void txa_fn(CPU *cpu, u16 /* Address Mode Implied */) {
     cpu->accumulator = cpu->x;
     update_zero_and_negative_flags(cpu, cpu->accumulator);
 }
@@ -727,14 +724,14 @@ void txa_fn(CPU *cpu, u16 operand_address) {
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#TXS
 // Transfer X to Stack Pointer
 // S = X
-void txs_fn(CPU *cpu, u16 operand_address) {
+void txs_fn(CPU *cpu, u16 /* Address Mode Implied */) {
     cpu->stack_pointer = cpu->x;
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#TYA
 // Transfer Y to Accumulator
 // A = Y
-void tya_fn(CPU *cpu, u16 operand_address) {
+void tya_fn(CPU *cpu, u16 /* Address Mode Implied */) {
     cpu->accumulator = cpu->y;
     update_zero_and_negative_flags(cpu, cpu->accumulator);
 }
