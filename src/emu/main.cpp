@@ -43,8 +43,8 @@ u8 test_code_1[] = {
     0xa6, 0x03, 0xa9, 0x00, 0x81, 0x10, 0xa2, 0x00, 0xa9, 0x01, 0x81, 0x10,
     0x60, 0xa2, 0x00, 0xea, 0xea, 0xca, 0xd0, 0xfb, 0x60};
 
-const char* get_disassembled_line(void* data, int line) {
-    const auto* v = (std::vector<std::string>*)data;
+const char *get_disassembled_line(void *data, int line) {
+    const auto *v = (std::vector<std::string> *)data;
     return v->at(line).c_str();
 };
 
@@ -60,7 +60,7 @@ int main() {
 
     u32 window_flags = SDL_WINDOW_OPENGL;
 
-    SDL_Window* window =
+    SDL_Window *window =
         SDL_CreateWindow("NES Emulator", 1280, 720, window_flags);
 
     if (window == nullptr) {
@@ -71,7 +71,7 @@ int main() {
     defer(SDL_DestroyWindow(window));
 
     u32 renderer_flags = 0;  // PRESENT_VSYNC ?
-    SDL_Renderer* renderer =
+    SDL_Renderer *renderer =
         SDL_CreateRenderer(window, nullptr, renderer_flags);
 
     if (renderer == nullptr) {
@@ -84,7 +84,7 @@ int main() {
     ImGui::CreateContext();
     defer(ImGui::DestroyContext());
 
-    ImGuiIO& io = ImGui::GetIO();
+    ImGuiIO &io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -153,13 +153,13 @@ int main() {
             ImGui::Checkbox("Demo Window", &show_demo_window);
             ImGui::Checkbox("Another window", &show_another_window);
 
-            ImGui::ColorEdit3("Clear color", (float*)&clear_color);
+            ImGui::ColorEdit3("Clear color", (float *)&clear_color);
 
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
                         1000.0f / io.Framerate, io.Framerate);
 
             ImGui::ListBox("Disassembly", &line, get_disassembled_line,
-                           (void*)&disassembly, (int)disassembly.size(), 30);
+                           (void *)&disassembly, (int)disassembly.size(), 30);
         }
         ImGui::End();
 

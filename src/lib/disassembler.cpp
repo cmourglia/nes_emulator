@@ -29,7 +29,7 @@ std::string dec_to_hex(int d, int size) {
     return result;
 }
 
-std::vector<std::string> disassemble_code(const std::vector<u8>& code) {
+std::vector<std::string> disassemble_code(const std::vector<u8> &code) {
     std::vector<std::string> result;
 
     u16 pointer = 0;
@@ -108,7 +108,7 @@ std::vector<std::string> disassemble_code(const std::vector<u8>& code) {
     return result;
 }
 
-void dump_cpu(CPU* cpu) {
+void dump_cpu(CPU *cpu) {
     printf(" -=-=-=- CPU Registers -=-=-=-\n");
 
     printf("  Program Counter: %04x\n", cpu->program_counter);

@@ -57,11 +57,11 @@ enum AddressingMode {
     AM_ZeroPage_Y,
 };
 
-CPU init_cpu(const std::vector<u8>& code = {});
+CPU init_cpu(const std::vector<u8> &code = {});
 
-void reset_cpu(CPU* cpu);
-void load_program(CPU* cpu, const std::vector<u8>& code);
+void reset_cpu(CPU *cpu);
+void load_program(CPU *cpu, const std::vector<u8> &code);
 
 // TODO: This is temporary, to get started. In the future
 // we will need a proper loop, with a bus and so on
-void run_cpu(CPU* cpu);
+void run_cpu(CPU *cpu);
