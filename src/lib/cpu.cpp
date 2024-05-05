@@ -119,6 +119,7 @@ int get_operand_address(CPU *cpu, OpCode *opcode, u16 *out_address) {
 
         case AM_Absolute: {
             *out_address = opcode->word;
+            cpu->program_counter += 2;
             return 0;
         }
 
@@ -126,6 +127,9 @@ int get_operand_address(CPU *cpu, OpCode *opcode, u16 *out_address) {
             *out_address = opcode->word + cpu->x;
             u16 old_hi = opcode->word & 0xFF00;
             u16 new_hi = *out_address & 0xFF00;
+
+            cpu->program_counter += 2;
+
             // Crossing boundaries means 1 additional cycle
             return old_hi == new_hi ? 0 : 1;
         }
@@ -134,12 +138,16 @@ int get_operand_address(CPU *cpu, OpCode *opcode, u16 *out_address) {
             *out_address = opcode->word + cpu->y;
             u16 old_hi = opcode->word & 0xFF00;
             u16 new_hi = *out_address & 0xFF00;
+
+            cpu->program_counter += 2;
+
             // Crossing boundaries means 1 additional cycle
             return old_hi == new_hi ? 0 : 1;
         }
 
         case AM_Immediate: {
-            *out_address = cpu->program_counter + 1;
+            *out_address = cpu->program_counter;
+            cpu->program_counter += 1;
             return 0;
         }
 
@@ -148,6 +156,8 @@ int get_operand_address(CPU *cpu, OpCode *opcode, u16 *out_address) {
             u16 hi = (u16)read_mem(cpu, opcode->word + 1);
 
             *out_address = (hi << 8) | lo;
+
+            cpu->program_counter += 2;
 
             return 0;
         }
@@ -160,6 +170,9 @@ int get_operand_address(CPU *cpu, OpCode *opcode, u16 *out_address) {
             u16 hi_byte = read_mem(cpu, (ptr + 1) & 0x00FF);
 
             *out_address = (hi_byte << 8) | lo_byte;
+
+            cpu->program_counter += 1;
+
             return 0;
         }
 
@@ -174,6 +187,8 @@ int get_operand_address(CPU *cpu, OpCode *opcode, u16 *out_address) {
             u16 old_hi = hi_byte << 8;
             u16 new_hi = *out_address & 0xFF00;
 
+            cpu->program_counter += 1;
+
             return old_hi == new_hi ? 0 : 1;
         }
 
@@ -184,21 +199,27 @@ int get_operand_address(CPU *cpu, OpCode *opcode, u16 *out_address) {
             }
 
             *out_address = relative_address;
+
+            cpu->program_counter += 1;
+
             return 0;
         }
 
         case AM_ZeroPage: {
             *out_address = opcode->byte;
+            cpu->program_counter += 1;
             return 0;
         }
 
         case AM_ZeroPage_X: {
             *out_address = (u16)(opcode->byte + cpu->x) & 0x00FF;
+            cpu->program_counter += 1;
             return 0;
         }
 
         case AM_ZeroPage_Y: {
             *out_address = (u16)(opcode->byte + cpu->y) & 0x00FF;
+            cpu->program_counter += 1;
             return 0;
         }
     }
@@ -211,14 +232,14 @@ void run_cpu(CPU *cpu) {
     while (true) {
         OpCode opcode = get_next_opcode(cpu->program_counter, cpu->memory);
 
+        cpu->program_counter += 1;
+
         u16 operand_address = 0;
         int cycles = opcode.cycles;
 
         cycles += get_operand_address(cpu, &opcode, &operand_address);
 
         opcode.instruction_fn(cpu, operand_address);
-
-        cpu->program_counter += opcode.bytes;
 
         tick(cpu, cycles);
 
@@ -269,7 +290,7 @@ void asl_acc_fn(CPU *cpu, u16 /* Address Mode Accumulator */) {
 void branch(CPU *cpu, u16 relative_address) {
     tick(cpu, 1);
 
-    u16 new_pc = cpu->program_counter + 1 + relative_address;
+    u16 new_pc = cpu->program_counter + relative_address;
 
     if (((cpu->program_counter + 1) & 0xFF00) != (new_pc & 0xFF00)) {
         tick(cpu, 1);
