@@ -251,12 +251,54 @@ void run_cpu(CPU *cpu) {
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#ADC
+// Add with Carry
+// A,Z,C,N = A+M+C
+// https://www.righto.com/2012/12/the-6502-overflow-flag-explained.html
+//
+// Truth table for the overflow flag (7th bit shown for each operand)
+// A M R | V
+// 0 0 0 | 0
+// 0 0 1 | 1
+// 0 1 0 | 0
+// 0 1 1 | 0
+// 1 0 0 | 0
+// 1 0 1 | 0
+// 1 1 0 | 1
+// 1 1 1 | 0
+//
+// So there is an overflow when both A and M are positive but R is negative
+// or when both A and M are negative and R is positive.
+// "Both are negative" or "Both are positive" is a XNOR gate (NOT XOR) between
+// both operands A and M.
+// We want to filter that out with the fact that R is different than M (resp. A)
+// when V is 1, which is an XOR gate between M (resp. A) and V.
+// We can then just binary AND both results to end up with our result
+//
+// A M R | V | A^M |~(A^M) | M^R | (M^R) & ~(A^M) |
+// 0 0 0 | 0 |  0  |   1   |  0  |       0        |
+// 0 0 1 | 1 |  0  |   1   |  1  |       1        |
+// 0 1 0 | 0 |  1  |   0   |  1  |       0        |
+// 0 1 1 | 0 |  1  |   0   |  0  |       0        |
+// 1 0 0 | 0 |  1  |   0   |  0  |       0        |
+// 1 0 1 | 0 |  1  |   0   |  1  |       0        |
+// 1 1 0 | 1 |  0  |   1   |  1  |       1        |
+// 1 1 1 | 0 |  0  |   1   |  0  |       0        |
 void adc_fn(CPU *cpu, u16 operand_address) {
-    UNUSED(cpu);
-    UNUSED(operand_address);
+    u16 M = read_mem(cpu, operand_address);
+    u16 A = cpu->accumulator;
+    u16 C = cpu->carry_flag;
+    u16 R = M + A + C;
 
-    // TODO
-    abort();
+    cpu->accumulator = (R & 0x00FF);
+
+    set_flag(cpu, CarryFlag, R & 0xFF00);
+    update_zero_and_negative_flags(cpu, cpu->accumulator);
+
+    // Overflow, just keep 7th bit
+    M = M & 0x80;
+    A = A & 0x80;
+    R = R & 0x80;
+    set_flag(cpu, OverflowFlag, ~(A ^ M) & (M ^ R));
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#AND
@@ -664,11 +706,28 @@ void rts_fn(CPU *cpu, u16 /* Address Mode Implied */) {
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#SBC
 // Subtract with Carry
 // A,Z,C,N = A-M-(1-C)
+// In practice,
+// A - M - B <=> A - M - B + 256
+//           <=> A - M - (1-C) + 256
+//           <=> A + (255-M) + C
+//           <=> A + ~M + C
+// So, overall, same as the addition, just complement M
 void sbc_fn(CPU *cpu, u16 operand_address) {
-    UNUSED(cpu);
-    UNUSED(operand_address);
-    // TODO:
-    abort();
+    u16 M = ~read_mem(cpu, operand_address) & 0x00FF;
+    u16 A = cpu->accumulator;
+    u16 C = cpu->carry_flag;
+    u16 R = A + M + C;
+
+    cpu->accumulator = (R & 0x00FF);
+
+    set_flag(cpu, CarryFlag, R & 0xFF00);
+    update_zero_and_negative_flags(cpu, cpu->accumulator);
+
+    // Overflow, just keep 7th bit
+    M = M & 0x80;
+    A = A & 0x80;
+    R = R & 0x80;
+    set_flag(cpu, OverflowFlag, ~(A ^ M) & (M ^ R));
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#SEC
