@@ -75,7 +75,7 @@ static void push_stack_u16(CPU *cpu, u16 value) {
 CPU init_cpu(const std::vector<u8> &code) {
     CPU cpu = {};
 
-    if (code.size() > 0) {
+    if (!code.empty()) {
         load_program(&cpu, code);
         reset_cpu(&cpu);
     }
