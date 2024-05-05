@@ -101,12 +101,12 @@ void reset_cpu(CPU *cpu) {
 
 void load_program(CPU *cpu, const std::vector<u8> &code) {
     // TODO: Temp address
-    if (sizeof(cpu->memory) - 0x8042 >= code.size()) {
-        memcpy(cpu->memory + 0x8042, code.data(), code.size());
+    if (sizeof(cpu->memory) - 0x8000 >= code.size()) {
+        memcpy(cpu->memory + 0x8000, code.data(), code.size());
     } else {
         abort();
     }
-    write_mem_u16(cpu, 0xFFFC, 0x8042);
+    write_mem_u16(cpu, 0xFFFC, 0x8000);
 }
 
 // Return true if page was crossed
