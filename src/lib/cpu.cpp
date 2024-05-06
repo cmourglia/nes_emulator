@@ -1,23 +1,18 @@
 #include "cpu.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
+#include "bus.h"
 #include "common.h"
 #include "opcode.h"
 
-enum Consts {
-    STACK_START = 0x0100,
-};
+#include "disassembler.h"
+
+constexpr u16 STACK_START = 0x0100;
 
 void tick(CPU *cpu, int cycles) {
-    UNUSED(cpu);
-    UNUSED(cycles);
+    cpu->cycles += cycles;
 
     // TODO: Move this in the BUS probably
     // TODO: Implement me please
-    fprintf(stderr, "TODO: tick()\n");
 }
 
 static void set_flag(CPU *cpu, StatusFlags flag, bool v) {
@@ -34,11 +29,11 @@ static void update_zero_and_negative_flags(CPU *cpu, u8 value) {
 }
 
 static u8 read_mem(CPU *cpu, u16 addr) {
-    return cpu->memory[addr];
+    return read_mem(cpu->bus, addr);
 }
 
 static void write_mem(CPU *cpu, u16 addr, u8 value) {
-    cpu->memory[addr] = value;
+    write_mem(cpu->bus, addr, value);
 }
 
 static u16 read_mem_u16(CPU *cpu, u16 addr) {
@@ -48,10 +43,10 @@ static u16 read_mem_u16(CPU *cpu, u16 addr) {
     return (hi << 8) | lo;
 }
 
-static void write_mem_u16(CPU *cpu, u16 addr, u16 value) {
-    write_mem(cpu, addr, value & 0xFF);
-    write_mem(cpu, addr + 1, (value >> 8) & 0xFF);
-}
+// static void write_mem_u16(CPU *cpu, u16 addr, u16 value) {
+//     write_mem(cpu, addr, value & 0xFF);
+//     write_mem(cpu, addr + 1, (value >> 8) & 0xFF);
+// }
 
 static u8 pop_stack(CPU *cpu) {
     cpu->stack_pointer += 1;
@@ -72,22 +67,11 @@ static void push_stack_u16(CPU *cpu, u16 value) {
     push_stack(cpu, value & 0x00FF);
 }
 
-CPU init_cpu(const std::vector<u8> &code) {
-    CPU cpu = {};
-
-    if (!code.empty()) {
-        load_program(&cpu, code);
-        reset_cpu(&cpu);
-    }
-
-    return cpu;
-}
-
-void reset_cpu(CPU *cpu) {
+void cpu_reset(CPU *cpu) {
     cpu->accumulator = 0;
     cpu->x = 0;
     cpu->y = 0;
-    cpu->status = UnusedFlag;
+    cpu->status = UnusedFlag | InterruptDisable;
     // TODO: Find out why everyone puts sets that as 0xFD
     cpu->stack_pointer = 0xFD;
 
@@ -96,9 +80,10 @@ void reset_cpu(CPU *cpu) {
 
     cpu->program_counter = (hi << 8) | lo;
 
-    // TODO: Reset cycle count (8)
+    tick(cpu, 7);
 }
 
+#if 0
 void load_program(CPU *cpu, const std::vector<u8> &code) {
     // TODO: Temp address
     if (sizeof(cpu->memory) - 0x8000 >= code.size()) {
@@ -108,6 +93,7 @@ void load_program(CPU *cpu, const std::vector<u8> &code) {
     }
     write_mem_u16(cpu, 0xFFFC, 0x8000);
 }
+#endif
 
 // Return true if page was crossed
 int get_operand_address(CPU *cpu, OpCode *opcode, u16 *out_address) {
@@ -230,7 +216,10 @@ int get_operand_address(CPU *cpu, OpCode *opcode, u16 *out_address) {
 void run_cpu(CPU *cpu) {
     // TODO: We do not really want an infinite loop here...
     while (true) {
-        OpCode opcode = get_next_opcode(cpu->program_counter, cpu->memory);
+        // TODO
+        OpCode opcode = get_next_opcode(cpu->bus, cpu->program_counter);
+
+        disassemble_cpu(cpu, &opcode);
 
         cpu->program_counter += 1;
 
@@ -243,7 +232,7 @@ void run_cpu(CPU *cpu) {
 
         tick(cpu, cycles);
 
-        if (cpu->break_command) {
+        if (opcode.instruction == I_BRK) {
             // TODO: Handle that more properly
             break;
         }
@@ -526,7 +515,7 @@ void eor_fn(CPU *cpu, u16 operand_address) {
 // Increment memory
 // M,Z,N = M + 1
 void inc_fn(CPU *cpu, u16 operand_address) {
-    u8 result = read_mem(cpu, operand_address) - 1;
+    u8 result = read_mem(cpu, operand_address) + 1;
     write_mem(cpu, operand_address, result);
     update_zero_and_negative_flags(cpu, result);
 }
@@ -557,7 +546,7 @@ void jmp_fn(CPU *cpu, u16 operand_address) {
 // Jump to Subroutine
 void jsr_fn(CPU *cpu, u16 operand_address) {
     // TODO: Check pushed PC
-    push_stack_u16(cpu, cpu->program_counter + 3 - 1);
+    push_stack_u16(cpu, cpu->program_counter - 1);
     cpu->program_counter = operand_address;
 }
 
@@ -600,7 +589,7 @@ void lsr_fn(CPU *cpu, u16 operand_address) {
 // Logical Shift Right
 // A,C,Z,N = A/2
 void lsr_acc_fn(CPU *cpu, u16 /* Address Mode Accumulator */) {
-    set_flag(cpu, CarryFlag, cpu->accumulator & 0x80);
+    set_flag(cpu, CarryFlag, cpu->accumulator & 0x01);
     cpu->accumulator >>= 1;
     update_zero_and_negative_flags(cpu, cpu->accumulator);
 }
@@ -629,7 +618,7 @@ void pha_fn(CPU *cpu, u16 /* Address Mode Implied */) {
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#PHP
 // Push Processor Status
 void php_fn(CPU *cpu, u16 /* Address Mode Implied */) {
-    push_stack(cpu, cpu->status);
+    push_stack(cpu, cpu->status | UnusedFlag | BreakCommand);
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#PLA
@@ -643,6 +632,8 @@ void pla_fn(CPU *cpu, u16 /* Address Mode Implied */) {
 // Pull Processor Status
 void plp_fn(CPU *cpu, u16 /* Address Mode Implied */) {
     cpu->status = pop_stack(cpu);
+    cpu->break_command = 0;
+    cpu->unused = 1;
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#ROL
@@ -694,13 +685,15 @@ void ror_acc_fn(CPU *cpu, u16 /* Address Mode Accumulator */) {
 // Return From Interrupt
 void rti_fn(CPU *cpu, u16 /* Address Mode Implied */) {
     cpu->status = pop_stack(cpu);
+    cpu->break_command = 0;
+    cpu->unused = 1;
     cpu->program_counter = pop_stack_u16(cpu);
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#RTS
 // Return From Subroutine
 void rts_fn(CPU *cpu, u16 /* Address Mode Implied */) {
-    cpu->program_counter = pop_stack_u16(cpu);
+    cpu->program_counter = pop_stack_u16(cpu) + 1;
 }
 
 // https://www.nesdev.org/obelisk-6502-guide/reference.html#SBC
@@ -814,4 +807,68 @@ void txs_fn(CPU *cpu, u16 /* Address Mode Implied */) {
 void tya_fn(CPU *cpu, u16 /* Address Mode Implied */) {
     cpu->accumulator = cpu->y;
     update_zero_and_negative_flags(cpu, cpu->accumulator);
+}
+
+// Unofficial instructions
+void jam_fn(CPU *, u16) {
+}
+
+void slo_fn(CPU *, u16) {
+}
+
+void anc_fn(CPU *, u16) {
+}
+
+void rla_fn(CPU *, u16) {
+}
+
+void sre_fn(CPU *, u16) {
+}
+
+void alr_fn(CPU *, u16) {
+}
+
+void rra_fn(CPU *, u16) {
+}
+
+void arr_fn(CPU *, u16) {
+}
+
+void sax_fn(CPU *, u16) {
+}
+
+void ane_fn(CPU *, u16) {
+}
+
+void sha_fn(CPU *, u16) {
+}
+
+void tas_fn(CPU *, u16) {
+}
+
+void shy_fn(CPU *, u16) {
+}
+
+void shx_fn(CPU *, u16) {
+}
+
+void lax_fn(CPU *, u16) {
+}
+
+void lxa_fn(CPU *, u16) {
+}
+
+void las_fn(CPU *, u16) {
+}
+
+void dcp_fn(CPU *, u16) {
+}
+
+void sbx_fn(CPU *, u16) {
+}
+
+void isc_fn(CPU *, u16) {
+}
+
+void usc_fn(CPU *, u16) {
 }

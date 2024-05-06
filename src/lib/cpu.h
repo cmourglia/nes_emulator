@@ -1,8 +1,9 @@
 #pragma once
-
 #include "common.h"
 
 #include <vector>
+
+struct Bus;
 
 // https://www.nesdev.org/obelisk-6502-guide/
 struct CPU {
@@ -12,6 +13,8 @@ struct CPU {
     u8 accumulator;
     u8 x;
     u8 y;
+
+    usize cycles = 0;
 
     union {
         u8 status;
@@ -27,7 +30,7 @@ struct CPU {
         };
     };
 
-    u8 memory[0x10000];
+    Bus* bus;
 };
 
 enum StatusFlags : u8 {
@@ -57,10 +60,7 @@ enum AddressingMode {
     AM_ZeroPage_Y,
 };
 
-CPU init_cpu(const std::vector<u8> &code = {});
-
-void reset_cpu(CPU *cpu);
-void load_program(CPU *cpu, const std::vector<u8> &code);
+void cpu_reset(CPU *cpu);
 
 // TODO: This is temporary, to get started. In the future
 // we will need a proper loop, with a bus and so on

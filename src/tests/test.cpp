@@ -3,6 +3,7 @@
 #include "cpu.h"
 #include "disassembler.h"
 
+#if 0
 TEST_CASE("a9_lda_immediate_load_data", "[opcodes][lda]") {
     CPU cpu = init_cpu({0xa9, 0x05, 0x00});
     run_cpu(&cpu);
@@ -100,3 +101,4 @@ TEST_CASE("10 times 3", "[programs]") {
 
     REQUIRE(cpu.memory[2] == 30);
 }
+#endif

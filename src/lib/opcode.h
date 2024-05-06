@@ -59,6 +59,29 @@ enum Instruction {
     I_TXA,
     I_TXS,
     I_TYA,
+
+    // Unofficial opcodes
+    I_ALR,
+    I_ANC,
+    I_ANE,
+    I_ARR,
+    I_DCP,
+    I_ISC,
+    I_JAM,
+    I_LAS,
+    I_LAX,
+    I_LXA,
+    I_RLA,
+    I_SLO,
+    I_SRE,
+    I_RRA,
+    I_SAX,
+    I_SBX,
+    I_SHA,
+    I_SHX,
+    I_SHY,
+    I_TAS,
+    I_USC,
 };
 
 struct OpCode {
@@ -78,5 +101,7 @@ struct OpCode {
     };
 };
 
-OpCode get_next_opcode(u16 program_counter, const u8 *memory);
+struct Bus;
+
+OpCode get_next_opcode(Bus* bus, u16 program_counter);
 const char *get_instruction_mnemonic(Instruction instruction);
