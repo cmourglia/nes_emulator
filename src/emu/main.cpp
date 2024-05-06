@@ -7,10 +7,12 @@
 #include <imgui_impl_sdl3.h>
 #include <imgui_impl_sdlrenderer3.h>
 
+#include "cartridge.h"
 #include "common.h"
 #include "cpu.h"
 #include "opcode.h"
 
+#include "bus.h"
 #include "disassembler.h"
 
 u8 test_code[] = {0xa9, 0xc0, 0xaa, 0xe8, 0x00};
@@ -49,6 +51,22 @@ const char *get_disassembled_line(void *data, int line) {
 };
 
 int main() {
+    Cartridge cartridge = load_cartridge("test_roms/nestest.nes");
+
+    Bus bus = {};
+    bus_load_cartridge(&bus, &cartridge);
+
+    auto disassembly = disassemble_code(&bus);
+
+    bus_reset(&bus);
+    // We need this for automation
+    bus.cpu.program_counter = 0xC000;
+    run_cpu(&bus.cpu);
+
+    release_cartridge(&cartridge);
+
+    return 0;
+
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMEPAD) != 0) {
         printf("SDL_Init() error: %s\n", SDL_GetError());
         return 1;
@@ -70,9 +88,10 @@ int main() {
 
     defer(SDL_DestroyWindow(window));
 
-    u32 renderer_flags = 0;  // PRESENT_VSYNC ?
+    u32 renderer_flags = 0;
     SDL_Renderer *renderer =
         SDL_CreateRenderer(window, nullptr, renderer_flags);
+    SDL_SetRenderVSync(renderer, 1);
 
     if (renderer == nullptr) {
         printf("SDL_CreateRenderer() error: %s\n", SDL_GetError());
@@ -101,14 +120,10 @@ int main() {
 
     bool done = false;
 
-    size_t code_size = sizeof(test_code);
+    // CPU cpu = init_cpu({test_code, test_code + code_size});
+    // run_cpu(&cpu);
 
-    auto disassembly = disassemble_code({test_code, test_code + code_size});
-
-    CPU cpu = init_cpu({test_code, test_code + code_size});
-    run_cpu(&cpu);
-
-    int line = 0;
+    int line = 0x8000;
 
     while (!done) {
         SDL_Event event;
