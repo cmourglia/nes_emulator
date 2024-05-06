@@ -3,5 +3,6 @@ IndentWidth: 4
 IncludeBlocks: Preserve
 SortIncludes: CaseSensitive
 AllowShortFunctionsOnASingleLine: InlineOnly
+AllowShortCaseLabelsOnASingleLine: true
 DerivePointerAlignment: False
 PointerAlignment: Right
