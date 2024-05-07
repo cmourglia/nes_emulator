@@ -1,11 +1,15 @@
 project(tests)
 
+# Copy nestest.nes for CI
+file(COPY ${CMAKE_SOURCE_DIR}/test_roms/nestest.nes
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
 Include(FetchContent)
 
 FetchContent_Declare(
-  Catch2
-  GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-  GIT_TAG        v3.4.0 # or a later release
+    Catch2
+    GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+    GIT_TAG v3.4.0 # or a later release
 )
 
 FetchContent_MakeAvailable(Catch2)

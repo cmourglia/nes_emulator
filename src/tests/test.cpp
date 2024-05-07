@@ -105,7 +105,7 @@ TEST_CASE("10 times 3", "[programs]") {
 #endif
 
 TEST_CASE("NES TEST", "[nestest]") {
-    Cartridge cartridge = load_cartridge("test_roms/nestest.nes");
+    Cartridge cartridge = load_cartridge("./nestest.nes");
     defer(release_cartridge(&cartridge));
 
     REQUIRE(cartridge.prg_rom_size == 0x4000);
