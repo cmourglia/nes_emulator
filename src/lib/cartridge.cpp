@@ -63,11 +63,17 @@ Cartridge load_cartridge(const char *filename) {
     }
 
     Header header = {};
-    fread(&header, sizeof(Header), 1, file);
+    usize read = fread(&header, sizeof(Header), 1, file);
+
+    if (read != 1) {
+        fprintf(stderr, "Could not read required amount of data for header\n");
+        return Cartridge{};
+    }
 
     if (memcmp(header.name, NES_MAGIC, sizeof(NES_MAGIC)) != 0) {
         fprintf(stderr, "Cartridge ROM %s is not using iNES format\n",
                 filename);
+        return Cartridge{};
     }
 
     bool has_trainer = header.f6.trainer;  // Ignore 512 bytes of trainer data
@@ -96,10 +102,20 @@ Cartridge load_cartridge(const char *filename) {
     };
 
     fseek(file, (long)start_prg_rom, SEEK_SET);
-    fread(cartridge.prg_rom, prg_rom_size, 1, file);
+    read = fread(cartridge.prg_rom, prg_rom_size, 1, file);
+
+    if (read != 1) {
+        fprintf(stderr, "Could not read required amount of data for PRG ROM\n");
+        return Cartridge{};
+    }
 
     fseek(file, (long)start_chr_rom, SEEK_SET);
-    fread(cartridge.chr_rom, chr_rom_size, 1, file);
+    read = fread(cartridge.chr_rom, chr_rom_size, 1, file);
+
+    if (read != 1) {
+        fprintf(stderr, "Could not read required amount of data for CHR ROM\n");
+        return Cartridge{};
+    }
 
     fclose(file);
 
