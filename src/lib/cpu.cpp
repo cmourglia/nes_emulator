@@ -239,7 +239,13 @@ void run_cpu(CPU *cpu) {
         u16 operand_address = 0;
         int cycles = opcode.cycles;
 
-        cycles += get_operand_address(cpu, &opcode, &operand_address);
+        int additional_cycles =
+            get_operand_address(cpu, &opcode, &operand_address);
+
+        if (instruction_has_additional_cycle_on_page_crossing(
+                opcode.instruction)) {
+            cycles += additional_cycles;
+        }
 
         opcode.instruction_fn(cpu, operand_address);
 
