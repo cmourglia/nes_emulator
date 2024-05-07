@@ -101,6 +101,8 @@ Cartridge load_cartridge(const char *filename) {
     fseek(file, (long)start_chr_rom, SEEK_SET);
     fread(cartridge.chr_rom, chr_rom_size, 1, file);
 
+    fclose(file);
+
     return cartridge;
 }
 
