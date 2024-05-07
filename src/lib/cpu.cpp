@@ -138,10 +138,23 @@ int get_operand_address(CPU *cpu, OpCode *opcode, u16 *out_address) {
         }
 
         case AM_Indirect: {
-            u16 lo = (u16)read_mem(cpu, opcode->word);
-            u16 hi = (u16)read_mem(cpu, opcode->word + 1);
+            // AN INDIRECT JUMP MUST NEVER USE A
+            // VECTOR BEGINNING ON THE LAST BYTE
+            // OF A PAGE
+            // (http://www.6502.org/tutorials/6502opcodes.html#JMP)
 
-            *out_address = (hi << 8) | lo;
+            // TODO: Avoid the if maybe ?
+            if (opcode->byte == 0xFF) {
+                u16 lo = (u16)read_mem(cpu, opcode->word);
+                u16 hi = (u16)read_mem(cpu, opcode->word & 0xFF00);
+
+                *out_address = (hi << 8) | lo;
+            } else {
+                u16 lo = (u16)read_mem(cpu, opcode->word);
+                u16 hi = (u16)read_mem(cpu, opcode->word + 1);
+
+                *out_address = (hi << 8) | lo;
+            }
 
             cpu->program_counter += 2;
 

@@ -142,10 +142,17 @@ static u16 get_operand_address(CPU *cpu, OpCode *opcode) {
         case AM_ZeroPage_Y: return (u16)(opcode->byte + cpu->y) & 0x00FF;
 
         case AM_Indirect: {
-            u16 lo = (u16)read_mem(cpu->bus, opcode->word);
-            u16 hi = (u16)read_mem(cpu->bus, opcode->word + 1);
+            if (opcode->byte == 0xFF) {
+                u16 lo = (u16)read_mem(cpu->bus, opcode->word);
+                u16 hi = (u16)read_mem(cpu->bus, opcode->word & 0xFF00);
 
-            return (hi << 8) | lo;
+                return (hi << 8) | lo;
+            } else {
+                u16 lo = (u16)read_mem(cpu->bus, opcode->word);
+                u16 hi = (u16)read_mem(cpu->bus, opcode->word + 1);
+
+                return (hi << 8) | lo;
+            }
         }
 
         case AM_Indirect_X: {
