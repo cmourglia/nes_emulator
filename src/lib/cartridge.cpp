@@ -62,15 +62,6 @@ Cartridge load_cartridge(const char *filename) {
         return Cartridge{};
     }
 
-    fseek(file, 0, SEEK_END);
-    long fsize = ftell(file);
-    fseek(file, 0, SEEK_SET);
-
-    u8* data = (u8*)malloc(fsize + 1);
-    fread(data, fsize, 1, file);
-
-    rewind(file);
-
     Header header = {};
     fread(&header, sizeof(Header), 1, file);
 
@@ -109,8 +100,6 @@ Cartridge load_cartridge(const char *filename) {
 
     fseek(file, (long)start_chr_rom, SEEK_SET);
     fread(cartridge.chr_rom, chr_rom_size, 1, file);
-
-    free(data);
 
     return cartridge;
 }
