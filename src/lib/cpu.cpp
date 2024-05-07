@@ -832,28 +832,53 @@ void tya_fn(CPU *cpu, u16 /* Address Mode Implied */) {
 void jam_fn(CPU *, u16) {
 }
 
-void slo_fn(CPU *, u16) {
+// https://www.masswerk.at/6502/6502_instruction_set.html#SLO
+// ASL oper + ORA oper
+// M = C <- [76543210] <- 0, A OR M -> A
+void slo_fn(CPU *cpu, u16 operand_address) {
+    asl_fn(cpu, operand_address);
+    ora_fn(cpu, operand_address);
 }
 
 void anc_fn(CPU *, u16) {
 }
 
-void rla_fn(CPU *, u16) {
+// https://www.masswerk.at/6502/6502_instruction_set.html#RLA
+// ROL oper + AND oper
+// M = C <- [76543210] <- C, A AND M -> A
+ void rla_fn(CPU *cpu, u16 operand_address) {
+     rol_fn(cpu, operand_address);
+     and_fn(cpu, operand_address);
 }
 
-void sre_fn(CPU *, u16) {
+// https://www.masswerk.at/6502/6502_instruction_set.html#SRE
+// LSR oper + EOR oper
+// M = 0 -> [76543210] -> C, A EOR M -> A
+void sre_fn(CPU *cpu, u16 operand_address) {
+    lsr_fn(cpu, operand_address);
+    eor_fn(cpu, operand_address);
 }
 
 void alr_fn(CPU *, u16) {
 }
 
-void rra_fn(CPU *, u16) {
+// https://www.masswerk.at/6502/6502_instruction_set.html#RRA
+// ROR oper + ADC oper
+// M = C -> [76543210] -> C, A + M + C -> A, C
+void rra_fn(CPU *cpu, u16 operand_address) {
+    ror_fn(cpu, operand_address);
+    adc_fn(cpu, operand_address);
 }
 
 void arr_fn(CPU *, u16) {
 }
 
-void sax_fn(CPU *, u16) {
+// https://www.masswerk.at/6502/6502_instruction_set.html#SAX
+// SAX (AXS, AAX)
+// A AND X -> M
+void sax_fn(CPU *cpu, u16 operand_address) {
+    u8 result = cpu->accumulator & cpu->x;
+    write_mem(cpu, operand_address, result);
 }
 
 void ane_fn(CPU *, u16) {
@@ -871,7 +896,12 @@ void shy_fn(CPU *, u16) {
 void shx_fn(CPU *, u16) {
 }
 
-void lax_fn(CPU *, u16) {
+// https://www.masswerk.at/6502/6502_instruction_set.html#LAX
+// LDA oper + LDX oper
+// M -> A -> X
+void lax_fn(CPU *cpu, u16 operand_address) {
+    lda_fn(cpu, operand_address);
+    ldx_fn(cpu, operand_address);
 }
 
 void lxa_fn(CPU *, u16) {
@@ -880,14 +910,22 @@ void lxa_fn(CPU *, u16) {
 void las_fn(CPU *, u16) {
 }
 
-void dcp_fn(CPU *, u16) {
+// https://www.masswerk.at/6502/6502_instruction_set.html#DCP
+// DEC oper + CMP oper
+// M-1 -> M, A-M
+void dcp_fn(CPU *cpu, u16 operand_address) {
+    dec_fn(cpu, operand_address);
+    cmp_fn(cpu, operand_address);
 }
 
 void sbx_fn(CPU *, u16) {
 }
 
-void isc_fn(CPU *, u16) {
-}
-
-void usc_fn(CPU *, u16) {
+// https://www.masswerk.at/6502/6502_instruction_set.html#ISC
+// ISC (ISB, INS) (For some reason it's called ISB in nestest
+// INC oper + SBC oper
+// M+1 -> M, A - M - ~C -> A
+void isb_fn(CPU *cpu, u16 operand_address) {
+    inc_fn(cpu, operand_address);
+    sbc_fn(cpu, operand_address);
 }

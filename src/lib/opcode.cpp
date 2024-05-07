@@ -88,8 +88,7 @@ extern void lxa_fn(CPU *, u16);
 extern void las_fn(CPU *, u16);
 extern void dcp_fn(CPU *, u16);
 extern void sbx_fn(CPU *, u16);
-extern void isc_fn(CPU *, u16);
-extern void usc_fn(CPU *, u16);
+extern void isb_fn(CPU *, u16);
 
 // There is probably tons of better ways to handle that,
 // lets KISS for now and see it that causes an issue in practice
@@ -119,7 +118,7 @@ static OpCode opcodes[0x100] = {
     /* 0x14 */ {nop_fn, I_NOP, 2, 4, AM_ZeroPage_X},
     /* 0x15 */ {ora_fn, I_ORA, 2, 4, AM_ZeroPage_X},
     /* 0x16 */ {asl_fn, I_ASL, 2, 6, AM_ZeroPage_X},
-    /* 0x17 */ {slo_fn, I_SLO, 2, 6, AM_Absolute},
+    /* 0x17 */ {slo_fn, I_SLO, 2, 6, AM_ZeroPage_X},
     /* 0x18 */ {clc_fn, I_CLC, 1, 2, AM_Implied},
     /* 0x19 */ {ora_fn, I_ORA, 3, 4, AM_Absolute_Y},
     /* 0x1A */ {nop_fn, I_NOP, 1, 2, AM_Implied},
@@ -336,36 +335,36 @@ static OpCode opcodes[0x100] = {
     /* 0xE0 */ {cpx_fn, I_CPX, 2, 2, AM_Immediate},
     /* 0xE1 */ {sbc_fn, I_SBC, 2, 6, AM_Indirect_X},
     /* 0xE2 */ {nop_fn, I_NOP, 2, 2, AM_Immediate},
-    /* 0xE3 */ {isc_fn, I_ISC, 2, 8, AM_Indirect_X},
+    /* 0xE3 */ {isb_fn, I_ISB, 2, 8, AM_Indirect_X},
     /* 0xE4 */ {cpx_fn, I_CPX, 2, 3, AM_ZeroPage},
     /* 0xE5 */ {sbc_fn, I_SBC, 2, 3, AM_ZeroPage},
     /* 0xE6 */ {inc_fn, I_INC, 2, 5, AM_ZeroPage},
-    /* 0xE7 */ {isc_fn, I_ISC, 2, 5, AM_ZeroPage},
+    /* 0xE7 */ {isb_fn, I_ISB, 2, 5, AM_ZeroPage},
     /* 0xE8 */ {inx_fn, I_INX, 1, 2, AM_Implied},
     /* 0xE9 */ {sbc_fn, I_SBC, 2, 2, AM_Immediate},
     /* 0xEA */ {nop_fn, I_NOP, 1, 2, AM_Implied},
-    /* 0xEB */ {usc_fn, I_USC, 2, 2, AM_Immediate},
+    /* 0xEB */ {sbc_fn, I_SBC, 2, 2, AM_Immediate},
     /* 0xEC */ {cpx_fn, I_CPX, 3, 4, AM_Absolute},
     /* 0xED */ {sbc_fn, I_SBC, 3, 4, AM_Absolute},
     /* 0xEE */ {inc_fn, I_INC, 3, 6, AM_Absolute},
-    /* 0xEF */ {isc_fn, I_ISC, 3, 6, AM_Absolute},
+    /* 0xEF */ {isb_fn, I_ISB, 3, 6, AM_Absolute},
 
     /* 0xF0 */ {beq_fn, I_BEQ, 2, 2, AM_Relative},
     /* 0xF1 */ {sbc_fn, I_SBC, 2, 5, AM_Indirect_Y},
     /* 0xF2 */ {jam_fn, I_JAM, 1, 1, AM_Implied},
-    /* 0xF3 */ {isc_fn, I_ISC, 2, 8, AM_Indirect_Y},
+    /* 0xF3 */ {isb_fn, I_ISB, 2, 8, AM_Indirect_Y},
     /* 0xF4 */ {nop_fn, I_NOP, 2, 4, AM_ZeroPage_X},
     /* 0xF5 */ {sbc_fn, I_SBC, 2, 4, AM_ZeroPage_X},
     /* 0xF6 */ {inc_fn, I_INC, 2, 6, AM_ZeroPage_X},
-    /* 0xF7 */ {isc_fn, I_ISC, 2, 6, AM_ZeroPage_X},
+    /* 0xF7 */ {isb_fn, I_ISB, 2, 6, AM_ZeroPage_X},
     /* 0xF8 */ {sed_fn, I_SED, 1, 2, AM_Implied},
     /* 0xF9 */ {sbc_fn, I_SBC, 3, 4, AM_Absolute_Y},
     /* 0xFA */ {nop_fn, I_NOP, 1, 2, AM_Implied},
-    /* 0xFB */ {isc_fn, I_ISC, 3, 7, AM_Absolute_Y},
+    /* 0xFB */ {isb_fn, I_ISB, 3, 7, AM_Absolute_Y},
     /* 0xFC */ {nop_fn, I_NOP, 3, 4, AM_Absolute_X},
     /* 0xFD */ {sbc_fn, I_SBC, 3, 4, AM_Absolute_X},
     /* 0xFE */ {inc_fn, I_INC, 3, 7, AM_Absolute_X},
-    /* 0xFF */ {isc_fn, I_ISC, 3, 7, AM_Absolute_X},
+    /* 0xFF */ {isb_fn, I_ISB, 3, 7, AM_Absolute_X},
 };
 
 static std::unordered_map<Instruction, const char *> opcode_mnemonics = {
@@ -385,11 +384,10 @@ static std::unordered_map<Instruction, const char *> opcode_mnemonics = {
     {I_TSX, "TSX"}, {I_TXA, "TXA"}, {I_TXS, "TXS"}, {I_TYA, "TYA"},
 
     {I_ALR, "ALR"}, {I_ANC, "ANC"}, {I_ANE, "ANE"}, {I_ARR, "ARR"},
-    {I_DCP, "DCP"}, {I_ISC, "ISC"}, {I_JAM, "JAM"}, {I_LAS, "LAS"},
+    {I_DCP, "DCP"}, {I_ISB, "ISB"}, {I_JAM, "JAM"}, {I_LAS, "LAS"},
     {I_LAX, "LAX"}, {I_LXA, "LXA"}, {I_RLA, "RLA"}, {I_SLO, "SLO"},
     {I_SRE, "SRE"}, {I_RRA, "RRA"}, {I_SAX, "SAX"}, {I_SBX, "SBX"},
     {I_SHA, "SHA"}, {I_SHX, "SHX"}, {I_SHY, "SHY"}, {I_TAS, "TAS"},
-    {I_USC, "USC"},
 };
 
 OpCode get_next_opcode(Bus *bus, u16 program_counter) {

@@ -66,7 +66,7 @@ enum Instruction {
     I_ANE,
     I_ARR,
     I_DCP,
-    I_ISC,
+    I_ISB,
     I_JAM,
     I_LAS,
     I_LAX,
@@ -81,7 +81,6 @@ enum Instruction {
     I_SHX,
     I_SHY,
     I_TAS,
-    I_USC,
 };
 
 struct OpCode {
