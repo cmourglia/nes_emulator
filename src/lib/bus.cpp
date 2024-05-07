@@ -37,7 +37,7 @@ bool cart_write(Bus *bus, u16 addr, u8 value) {
 }
 
 u8 read_mem(Bus *bus, u16 addr) {
-    u8 value = 0;
+    u8 value = 0xFF;
     if (cart_read(bus, addr, &value)) {
     } else if (addr >= RAM_START && addr <= RAM_MIRROR_END) {
         addr &= 0x07FF;  // 00000111 11111111

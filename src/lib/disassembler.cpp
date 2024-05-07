@@ -415,7 +415,16 @@ void disassemble_cpu(CPU *cpu, OpCode *opcode) {
             case I_ROL:
             case I_INC:
             case I_DEC:
+                // Illegal
             case I_NOP:
+            case I_LAX:
+            case I_SAX:
+            case I_DCP:
+            case I_ISB:
+            case I_SLO:
+            case I_RLA:
+            case I_SRE:
+            case I_RRA:
                 printf(" = %02X", read_mem(bus, addr));
                 len += 5;
                 break;
