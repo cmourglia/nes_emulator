@@ -56,6 +56,7 @@ constexpr usize CHR_ROM_PAGE_SIZE = 8192;   // 0x8000
 
 Cartridge load_cartridge(const char *filename) {
     FILE *file = fopen(filename, "rb");
+    defer(fclose(file));
 
     if (file == nullptr) {
         fprintf(stderr, "Error while trying to load file %s\n", filename);
@@ -116,8 +117,6 @@ Cartridge load_cartridge(const char *filename) {
         fprintf(stderr, "Could not read required amount of data for CHR ROM\n");
         return Cartridge{};
     }
-
-    fclose(file);
 
     return cartridge;
 }
