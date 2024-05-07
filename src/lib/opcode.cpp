@@ -420,3 +420,22 @@ OpCode get_next_opcode(Bus *bus, u16 program_counter) {
 const char *get_instruction_mnemonic(Instruction instruction) {
     return opcode_mnemonics.at(instruction);
 }
+
+bool instruction_has_additional_cycle_on_page_crossing(
+    Instruction instruction) {
+    switch (instruction) {
+        case I_ADC:
+        case I_AND:
+        case I_CMP:
+        case I_EOR:
+        case I_LDA:
+        case I_LDX:
+        case I_LDY:
+        case I_NOP:
+        case I_ORA:
+        case I_SBC:
+        case I_LAS:
+        case I_LAX: return true;
+        default: return false;
+    }
+}

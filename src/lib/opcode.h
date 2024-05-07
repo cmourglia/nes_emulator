@@ -105,3 +105,5 @@ struct Bus;
 
 OpCode get_next_opcode(Bus* bus, u16 program_counter);
 const char *get_instruction_mnemonic(Instruction instruction);
+
+bool instruction_has_additional_cycle_on_page_crossing(Instruction instruction);
