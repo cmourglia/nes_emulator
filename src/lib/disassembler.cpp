@@ -225,28 +225,27 @@ void disassemble_cpu(CPU *cpu, OpCode *opcode) {
             len = 5;
         } break;
         case AM_Absolute_X: {
-            //                str += "$" + dec_to_hex(opcode.word, 4) + ",X";
+            printf("$%04X,X @ %04X", opcode->word, addr);
+            len = 14;
         } break;
         case AM_Absolute_Y: {
-            //                str += "$" + dec_to_hex(opcode.word, 4) + ",Y";
+            printf("$%04X,Y @ %04X", opcode->word, addr);
+            len = 14;
         } break;
         case AM_Immediate: {
             printf("#$%02X", opcode->byte);
             len = 4;
         } break;
         case AM_Implied: {
-            //                str += "       ";
         } break;
         case AM_Indirect: {
             printf("($%04X) = %04X", opcode->word, addr);
             len = 14;
-            //                str += "($" + dec_to_hex(opcode.word, 4) + ")";
         } break;
         case AM_Indirect_X: {
             printf("($%02X,X) @ %02X = %04X", opcode->byte,
                    (opcode->byte + cpu->x) & 0xFF, addr);
             len = 19;
-            //                str += "($" + dec_to_hex(opcode.byte, 2) + ",X)";
         } break;
         case AM_Indirect_Y: {
             u16 base = opcode->byte;
@@ -256,26 +255,24 @@ void disassemble_cpu(CPU *cpu, OpCode *opcode) {
 
             u16 base_addr = lo_byte | (hi_byte << 8);
 
-            printf("($%02X),Y = %04X @ %04X", opcode->byte,
-                   base_addr, addr);
+            printf("($%02X),Y = %04X @ %04X", opcode->byte, base_addr, addr);
             len = 21;
-            //                printf("$" + dec_to_hex(opcode.byte, 2) + "),Y";
         } break;
         case AM_Relative: {
             printf("$%04X", cpu->program_counter + 2 + addr);
             len = 5;
-            //                str += "$" + dec_to_hex(opcode.byte, 2) + "    ";
         } break;
         case AM_ZeroPage: {
-            printf("$%02X", addr);
+            printf("$%02X", addr & 0x00FF);
             len = 3;
-            //                str += "$" + dec_to_hex(opcode.byte, 2) + "    ";
         } break;
         case AM_ZeroPage_X: {
-            //                str += "$" + dec_to_hex(opcode.byte, 2) + ",X  ";
+            printf("$%02X,X @ %02X", opcode->byte, addr & 0x00FF);
+            len = 10;
         } break;
         case AM_ZeroPage_Y: {
-            //                str += "$" + dec_to_hex(opcode.byte, 2) + ",Y  ";
+            printf("$%02X,Y @ %02X", opcode->byte, addr & 0x00FF);
+            len = 10;
         } break;
     }
 
