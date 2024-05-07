@@ -129,6 +129,118 @@ void dump_cpu(CPU *cpu) {
     printf(" -=-=-=-=-=-=-=-=-=-=-=-=-=-=-\n");
 }
 
+static bool opcode_is_illegal(u8 opcode) {
+    switch (opcode) {
+        case 0x02:
+        case 0x03:
+        case 0x04:
+        case 0x07:
+        case 0x0B:
+        case 0x0C:
+        case 0x0F:
+        case 0x12:
+        case 0x13:
+        case 0x14:
+        case 0x17:
+        case 0x1A:
+        case 0x1B:
+        case 0x1C:
+        case 0x1F:
+        case 0x22:
+        case 0x23:
+        case 0x27:
+        case 0x2B:
+        case 0x2F:
+        case 0x32:
+        case 0x33:
+        case 0x34:
+        case 0x37:
+        case 0x3A:
+        case 0x3B:
+        case 0x3C:
+        case 0x3F:
+        case 0x42:
+        case 0x43:
+        case 0x44:
+        case 0x47:
+        case 0x4B:
+        case 0x4F:
+        case 0x52:
+        case 0x53:
+        case 0x54:
+        case 0x57:
+        case 0x5A:
+        case 0x5B:
+        case 0x5C:
+        case 0x5F:
+        case 0x62:
+        case 0x63:
+        case 0x64:
+        case 0x67:
+        case 0x6B:
+        case 0x6F:
+        case 0x72:
+        case 0x73:
+        case 0x74:
+        case 0x77:
+        case 0x7A:
+        case 0x7B:
+        case 0x7C:
+        case 0x7F:
+        case 0x80:
+        case 0x82:
+        case 0x83:
+        case 0x87:
+        case 0x89:
+        case 0x8B:
+        case 0x8F:
+        case 0x92:
+        case 0x93:
+        case 0x97:
+        case 0x9B:
+        case 0x9C:
+        case 0x9E:
+        case 0x9F:
+        case 0xA3:
+        case 0xA7:
+        case 0xAB:
+        case 0xAF:
+        case 0xB2:
+        case 0xB3:
+        case 0xB7:
+        case 0xBB:
+        case 0xBF:
+        case 0xC2:
+        case 0xC3:
+        case 0xC7:
+        case 0xCB:
+        case 0xCF:
+        case 0xD2:
+        case 0xD3:
+        case 0xD4:
+        case 0xD7:
+        case 0xDA:
+        case 0xDB:
+        case 0xDC:
+        case 0xDF:
+        case 0xE2:
+        case 0xE3:
+        case 0xE7:
+        case 0xEB:
+        case 0xEF:
+        case 0xF2:
+        case 0xF3:
+        case 0xF4:
+        case 0xF7:
+        case 0xFA:
+        case 0xFB:
+        case 0xFC:
+        case 0xFF: return true;
+
+        default: return false;
+    }
+}
+
 static u16 get_operand_address(CPU *cpu, OpCode *opcode) {
     switch (opcode->addressing_mode) {
         case AM_Accumulator: return 0;
@@ -207,7 +319,9 @@ void disassemble_cpu(CPU *cpu, OpCode *opcode) {
             break;
     }
 
-    printf("  ");
+    printf(
+        " %c",
+        (opcode_is_illegal(read_mem(bus, cpu->program_counter)) ? '*' : ' '));
 
     printf("%s ", get_instruction_mnemonic(opcode->instruction));
 
@@ -259,7 +373,7 @@ void disassemble_cpu(CPU *cpu, OpCode *opcode) {
             len = 21;
         } break;
         case AM_Relative: {
-            printf("$%04X", cpu->program_counter + 2 + addr);
+            printf("$%04X", (cpu->program_counter + 2 + addr) & 0xFFFF);
             len = 5;
         } break;
         case AM_ZeroPage: {
@@ -277,7 +391,8 @@ void disassemble_cpu(CPU *cpu, OpCode *opcode) {
     }
 
     if (opcode->addressing_mode != AM_Immediate &&
-        opcode->addressing_mode != AM_Accumulator) {
+        opcode->addressing_mode != AM_Accumulator &&
+        opcode->addressing_mode != AM_Implied) {
         switch (opcode->instruction) {
             case I_STX:
             case I_STA:
@@ -300,6 +415,7 @@ void disassemble_cpu(CPU *cpu, OpCode *opcode) {
             case I_ROL:
             case I_INC:
             case I_DEC:
+            case I_NOP:
                 printf(" = %02X", read_mem(bus, addr));
                 len += 5;
                 break;
